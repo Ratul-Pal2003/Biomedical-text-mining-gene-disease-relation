@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_file
 from flask_cors import CORS
 import os
 import json
@@ -7,6 +7,8 @@ from werkzeug.utils import secure_filename
 from config import config
 import logging
 import re
+import pandas as pd
+from io import BytesIO
 
 # Import our processors
 from models.ner_processor import extract_biomedical_entities, ner_processor
@@ -110,21 +112,32 @@ def process_text():
         ner_results = extract_biomedical_entities(input_text, use_semantic=True)
         
         # Convert to our API format and apply confidence filtering
-        api_results = []
+        # Use dictionary for deduplication - keep highest confidence for each gene-disease pair
+        unique_relations = {}
         for relation in ner_results['relations']:
             if relation['confidence'] >= confidence_threshold:
-                api_result = {
-                    'disease': relation['disease'],
-                    'gene': relation['gene'],
-                    'evidence': relation['evidence'].strip(),
-                    'confidence': round(relation['confidence'], 3),
-                    'relation_type': relation.get('relation_type', 'related'),
-                    'pubmed_id': pubmed_id or 'N/A',
-                    'gene_info': relation['gene_info'],
-                    'disease_info': relation['disease_info']
-                }
-                api_results.append(api_result)
-        
+                # Create unique key from gene-disease pair (case-insensitive)
+                gene = relation['gene'].strip()
+                disease = relation['disease'].strip()
+                key = (gene.lower(), disease.lower())
+
+                # Only add if this is the first occurrence or has higher confidence
+                if key not in unique_relations or relation['confidence'] > unique_relations[key]['confidence']:
+                    api_result = {
+                        'disease': disease,
+                        'gene': gene,
+                        'evidence': relation['evidence'].strip(),
+                        'confidence': round(relation['confidence'], 3),
+                        'relation_type': relation.get('relation_type', 'related'),
+                        'pubmed_id': pubmed_id or 'N/A',
+                        'gene_info': relation['gene_info'],
+                        'disease_info': relation['disease_info']
+                    }
+                    unique_relations[key] = api_result
+
+        # Convert back to list
+        api_results = list(unique_relations.values())
+
         # Calculate statistics
         unique_genes = len(set(r['gene'] for r in api_results))
         unique_diseases = len(set(r['disease'] for r in api_results))
@@ -149,7 +162,10 @@ def process_text():
         
         logger.info(f"Processed REAL text successfully: {len(api_results)} relations found")
         logger.info(f"Raw NER found: {ner_results['total_genes']} genes, {ner_results['total_diseases']} diseases")
-        
+
+        # Sort results by confidence score in descending order
+        api_results.sort(key=lambda x: x['confidence'], reverse=True)
+
         response_data = {
             'status': 'success',
             'results': api_results,
@@ -300,6 +316,73 @@ def search_pubmed_endpoint():
         logger.error(f"PubMed search error: {str(e)}")
         return jsonify({'error': f'PubMed search failed: {str(e)}'}), 500
     
+def _generate_relation_summary(gene, disease, evidence_list, papers):
+    """
+    Generate an abstractive summary for a gene-disease relation
+    based on evidence from multiple papers
+
+    Args:
+        gene (str): Gene name
+        disease (str): Disease name
+        evidence_list (list): List of evidence sentences
+        papers (list): List of supporting papers
+
+    Returns:
+        str: Abstractive summary with citations
+    """
+    # Extract key information from evidence sentences
+    # Look for keywords indicating relation type
+    relation_keywords = {
+        'causative': ['cause', 'causes', 'responsible for', 'leads to', 'results in', 'induces'],
+        'risk': ['risk', 'susceptibility', 'predisposition', 'increases risk'],
+        'associated': ['associated', 'linked', 'correlated', 'related', 'connection'],
+        'protective': ['protective', 'reduce risk', 'lower risk', 'prevents'],
+        'therapeutic': ['treatment', 'therapy', 'therapeutic', 'drug target']
+    }
+
+    # Determine primary relation type
+    relation_type = 'associated'
+    for rtype, keywords in relation_keywords.items():
+        for evidence in evidence_list:
+            if any(keyword in evidence.lower() for keyword in keywords):
+                relation_type = rtype
+                break
+
+    # Count supporting papers
+    paper_count = len(papers)
+
+    # Create summary based on relation type
+    summaries = {
+        'causative': f"{gene} has been identified as a causative factor in {disease}. ",
+        'risk': f"{gene} variants are associated with increased risk of {disease}. ",
+        'associated': f"{gene} shows significant association with {disease}. ",
+        'protective': f"{gene} has protective effects against {disease}. ",
+        'therapeutic': f"{gene} represents a potential therapeutic target for {disease}. "
+    }
+
+    summary = summaries.get(relation_type, f"{gene} is related to {disease}. ")
+
+    # Add paper count
+    if paper_count == 1:
+        summary += f"This relationship has been reported in 1 study."
+    else:
+        summary += f"This relationship has been consistently reported across {paper_count} studies."
+
+    # Add citation information
+    citations = []
+    for paper in papers:
+        year = paper.get('year', 'n.d.')
+        pmid = paper.get('pmid', '')
+        citations.append(f"PMID:{pmid} ({year})")
+
+    if citations:
+        citation_str = "; ".join(citations[:5])  # Limit to first 5 citations
+        if len(citations) > 5:
+            citation_str += f" and {len(citations) - 5} more"
+        summary += f" [{citation_str}]"
+
+    return summary
+
 @app.route('/search_by_entity', methods=['POST'])
 def search_by_entity():
     """
@@ -310,7 +393,7 @@ def search_by_entity():
         data = request.get_json()
         entity = data.get('entity', '').strip()
         entity_type = data.get('entity_type', 'auto')
-        max_papers = int(data.get('max_papers', 10))
+        max_papers = int(data.get('max_papers', 20))
         confidence_threshold = float(data.get('confidence_threshold', 0.7))
         
         if not entity:
@@ -373,21 +456,54 @@ def search_by_entity():
                 logger.error(f"Error processing {pmid}: {e}")
                 continue
         
-        # Remove duplicates - keep highest confidence
+        # Aggregate duplicates - collect all supporting papers
         unique_relations = {}
         for rel in all_relations:
             key = (rel['gene'].lower(), rel['disease'].lower())
-            if key not in unique_relations or rel['confidence'] > unique_relations[key]['confidence']:
-                if key not in unique_relations:
-                    unique_relations[key] = rel
-                    unique_relations[key]['supporting_papers'] = []
-                
-                unique_relations[key]['supporting_papers'].append({
-                    'pmid': rel['pmid'],
-                    'title': rel['paper_title'],
-                    'evidence': rel['evidence']
-                })
-        
+
+            # Initialize if first occurrence
+            if key not in unique_relations:
+                unique_relations[key] = {
+                    'gene': rel['gene'],
+                    'disease': rel['disease'],
+                    'relation_type': rel.get('relation_type', 'related'),
+                    'confidence': rel['confidence'],
+                    'gene_info': rel.get('gene_info', {}),
+                    'disease_info': rel.get('disease_info', {}),
+                    'supporting_papers': [],
+                    'all_evidence': []
+                }
+
+            # Keep highest confidence
+            if rel['confidence'] > unique_relations[key]['confidence']:
+                unique_relations[key]['confidence'] = rel['confidence']
+
+            # Collect supporting paper
+            paper_info = {
+                'pmid': rel['pmid'],
+                'title': rel['paper_title'],
+                'year': rel.get('paper_year', ''),
+                'url': rel.get('paper_url', ''),
+                'evidence': rel['evidence']
+            }
+            unique_relations[key]['supporting_papers'].append(paper_info)
+            unique_relations[key]['all_evidence'].append(rel['evidence'])
+
+        # Create summary for each relation
+        for key, relation in unique_relations.items():
+            # Generate abstractive summary
+            summary = _generate_relation_summary(
+                relation['gene'],
+                relation['disease'],
+                relation['all_evidence'],
+                relation['supporting_papers']
+            )
+            relation['summary'] = summary
+            relation['paper_count'] = len(relation['supporting_papers'])
+
+            # Remove the temporary all_evidence field
+            del relation['all_evidence']
+
         final_relations = list(unique_relations.values())
         final_relations.sort(key=lambda x: x['confidence'], reverse=True)
         
@@ -428,11 +544,69 @@ def export_results(format_type):
             results = full_data.get('results', [])
         
         if format_type == 'csv':
-            # TODO: Implement CSV export
-            return jsonify({'message': 'CSV export coming soon', 'data': results})
+            # Convert results to CSV
+            df = pd.DataFrame(results)
+
+            # Reorder columns for better readability
+            column_order = ['disease', 'gene', 'confidence', 'relation_type', 'evidence', 'pubmed_id']
+            # Only include columns that exist
+            columns = [col for col in column_order if col in df.columns]
+            df = df[columns]
+
+            # Create CSV in memory
+            csv_buffer = BytesIO()
+            df.to_csv(csv_buffer, index=False, encoding='utf-8')
+            csv_buffer.seek(0)
+
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f'gene_disease_relations_{timestamp}.csv'
+
+            return send_file(
+                csv_buffer,
+                mimetype='text/csv',
+                as_attachment=True,
+                download_name=filename
+            )
+
         elif format_type == 'excel':
-            # TODO: Implement Excel export
-            return jsonify({'message': 'Excel export coming soon', 'data': results})
+            # Convert results to Excel
+            df = pd.DataFrame(results)
+
+            # Reorder columns for better readability
+            column_order = ['disease', 'gene', 'confidence', 'relation_type', 'evidence', 'pubmed_id']
+            # Only include columns that exist
+            columns = [col for col in column_order if col in df.columns]
+            df = df[columns]
+
+            # Create Excel file in memory
+            excel_buffer = BytesIO()
+            with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+                df.to_excel(writer, index=False, sheet_name='Gene-Disease Relations')
+
+                # Auto-adjust column widths
+                worksheet = writer.sheets['Gene-Disease Relations']
+                for idx, col in enumerate(df.columns):
+                    max_length = max(
+                        df[col].astype(str).apply(len).max(),
+                        len(col)
+                    )
+                    # Limit evidence column width
+                    if col == 'evidence':
+                        max_length = min(max_length, 50)
+                    worksheet.column_dimensions[chr(65 + idx)].width = max_length + 2
+
+            excel_buffer.seek(0)
+
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f'gene_disease_relations_{timestamp}.xlsx'
+
+            return send_file(
+                excel_buffer,
+                mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                as_attachment=True,
+                download_name=filename
+            )
+
         elif format_type == 'json':
             return jsonify(results)
         else:

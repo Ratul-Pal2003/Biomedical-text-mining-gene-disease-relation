@@ -143,17 +143,38 @@ class PubMedAPI:
         try:
             response = self._make_request('efetch', params)
             root = ET.fromstring(response.content)
-            
+
             # Parse XML to extract article information
             article_data = self._parse_article_xml(root, pmid)
-            
+
             if article_data:
                 logger.info(f"Successfully fetched article {pmid}: {article_data.get('title', 'No title')[:50]}...")
+
+                # If PMCID is available, attempt to fetch full-text
+                pmcid = article_data.get('pmcid', '')
+                if pmcid:
+                    logger.info(f"PMCID {pmcid} found for PMID {pmid}, attempting full-text fetch...")
+                    pmc_data = self.fetch_pmc_fulltext(pmcid)
+
+                    if pmc_data:
+                        # Replace abstract with full-text
+                        article_data['full_text'] = pmc_data['full_text']
+                        article_data['full_text_sections'] = pmc_data['sections']
+                        article_data['has_fulltext'] = True
+                        # Use full-text for abstract field (for NER processing)
+                        article_data['abstract'] = pmc_data['full_text']
+                        logger.info(f"Full-text retrieved successfully for PMID {pmid}")
+                    else:
+                        logger.info(f"Full-text not available for PMCID {pmcid}, using abstract only")
+                        article_data['has_fulltext'] = False
+                else:
+                    logger.info(f"No PMCID available for PMID {pmid}, using abstract only")
+                    article_data['has_fulltext'] = False
             else:
                 logger.warning(f"No data found for PubMed ID: {pmid}")
-            
+
             return article_data
-            
+
         except Exception as e:
             logger.error(f"Error fetching PubMed article {pmid}: {e}")
             return None
@@ -183,18 +204,16 @@ class PubMedAPI:
             title_elem = medline_citation.find('.//ArticleTitle')
             title = title_elem.text if title_elem is not None else "No title available"
             
-            # Abstract
+            # Abstract - include ALL sections for better NER results
             abstract_parts = []
             abstract_section = medline_citation.find('.//Abstract')
             if abstract_section is not None:
                 for abstract_text in abstract_section.findall('.//AbstractText'):
                     label = abstract_text.get('Label', '')
                     text = abstract_text.text or ''
-                    if label and label.upper() not in ['BACKGROUND', 'OBJECTIVE', 'METHODS']:
+                    if text:  # Include all sections with text
                         abstract_parts.append(f"{label}: {text}" if label else text)
-                    elif not label:  # Plain abstract text
-                        abstract_parts.append(text)
-            
+
             abstract = ' '.join(abstract_parts).strip()
             if not abstract:
                 abstract = "No abstract available"
@@ -223,15 +242,18 @@ class PubMedAPI:
                 year_elem = pub_date.find('.//Year')
                 year = year_elem.text if year_elem is not None else ""
             
-            # DOI
+            # DOI and PMCID
             doi = ""
+            pmcid = ""
             article_ids = article.find('.//ArticleIdList')
             if article_ids is not None:
                 for article_id in article_ids.findall('.//ArticleId'):
-                    if article_id.get('IdType') == 'doi':
+                    id_type = article_id.get('IdType')
+                    if id_type == 'doi':
                         doi = article_id.text
-                        break
-            
+                    elif id_type == 'pmc':
+                        pmcid = article_id.text
+
             return {
                 'pmid': pmid,
                 'title': title,
@@ -240,13 +262,176 @@ class PubMedAPI:
                 'journal': journal,
                 'year': year,
                 'doi': doi,
+                'pmcid': pmcid,
                 'url': f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
             }
             
         except Exception as e:
             logger.error(f"Error parsing XML for PMID {pmid}: {e}")
             return None
-    
+
+    def fetch_pmc_fulltext(self, pmcid: str) -> Optional[Dict]:
+        """
+        Fetch full-text article from PubMed Central (PMC)
+        Only extracts relevant sections for biomedical NER (Introduction, Results, Discussion)
+        Filters out Methods, Supplementary, References, etc.
+
+        Args:
+            pmcid (str): PMC ID (e.g., 'PMC3531190' or just '3531190')
+
+        Returns:
+            Dict with full-text sections or None if not available
+        """
+        try:
+            # Clean PMCID - remove 'PMC' prefix if present
+            pmcid_clean = pmcid.replace('PMC', '')
+
+            logger.info(f"Attempting to fetch full-text for PMCID: PMC{pmcid_clean}")
+
+            params = {
+                'db': 'pmc',
+                'id': pmcid_clean,
+                'retmode': 'xml'
+            }
+
+            response = self._make_request('efetch', params)
+            root = ET.fromstring(response.content)
+
+            # Get abstract first (as fallback if full-text fails)
+            abstract = self._extract_pmc_abstract(root)
+
+            # Parse JATS XML for full-text sections
+            sections = {}
+
+            # Define relevant sections for gene-disease extraction
+            # Exclude: Methods, Materials, Supplementary, Acknowledgments, etc.
+            relevant_sections = [
+                'introduction', 'background', 'intro',
+                'results', 'result', 'findings',
+                'discussion', 'conclusions', 'conclusion'
+            ]
+
+            # Get article body
+            body = root.find('.//body')
+            if body is None:
+                logger.warning(f"No body found in PMC{pmcid_clean} - may not be open access")
+                # Return abstract if available
+                if abstract:
+                    return {
+                        'pmcid': f"PMC{pmcid_clean}",
+                        'sections': {'Abstract': abstract},
+                        'full_text': abstract,
+                        'has_fulltext': False
+                    }
+                return None
+
+            # Extract relevant sections only
+            for sec in body.findall('.//sec'):
+                title_elem = sec.find('.//title')
+                if title_elem is not None and title_elem.text:
+                    section_name = title_elem.text.strip()
+                    section_name_lower = section_name.lower()
+
+                    # Skip methods, materials, supplementary sections
+                    if any(skip in section_name_lower for skip in [
+                        'method', 'material', 'procedure', 'protocol',
+                        'supplementary', 'supplement', 'acknowledgment',
+                        'author', 'contribution', 'funding', 'conflict',
+                        'data availability', 'statistical', 'ethics'
+                    ]):
+                        continue
+
+                    # Only process relevant sections
+                    if any(rel in section_name_lower for rel in relevant_sections):
+                        # Collect paragraph text - extract text content only
+                        paragraphs = []
+                        for p in sec.findall('.//p'):
+                            # Get text using itertext() to avoid nested element issues
+                            para_text = ''.join(p.itertext()).strip()
+                            # Clean the text
+                            para_text = self._clean_text(para_text)
+                            if para_text and len(para_text) > 20:  # Skip very short fragments
+                                paragraphs.append(para_text)
+
+                        if paragraphs:
+                            sections[section_name] = ' '.join(paragraphs)
+
+            # If no relevant sections found, fall back to abstract
+            if not sections:
+                logger.warning(f"No relevant sections found in PMC{pmcid_clean}, using abstract")
+                if abstract:
+                    return {
+                        'pmcid': f"PMC{pmcid_clean}",
+                        'sections': {'Abstract': abstract},
+                        'full_text': abstract,
+                        'has_fulltext': False
+                    }
+                return None
+
+            # Combine relevant sections into full text
+            full_text = ' '.join(sections.values())
+
+            logger.info(f"Successfully fetched full-text for PMC{pmcid_clean}: {len(sections)} relevant sections, {len(full_text)} characters")
+
+            return {
+                'pmcid': f"PMC{pmcid_clean}",
+                'sections': sections,
+                'full_text': full_text,
+                'has_fulltext': True
+            }
+
+        except Exception as e:
+            logger.error(f"Error fetching PMC fulltext for {pmcid}: {e}")
+            return None
+
+    def _extract_pmc_abstract(self, root: ET.Element) -> str:
+        """Extract abstract from PMC XML"""
+        try:
+            abstract_section = root.find('.//abstract')
+            if abstract_section is not None:
+                abstract_text = ''.join(abstract_section.itertext()).strip()
+                return self._clean_text(abstract_text)
+            return ""
+        except Exception:
+            return ""
+
+    def _clean_text(self, text: str) -> str:
+        """
+        Clean extracted text by removing:
+        - LaTeX code and formulas
+        - Figure/table references
+        - Extra whitespace
+        - Special characters
+        """
+        import re
+
+        # Remove LaTeX commands and environments
+        text = re.sub(r'\\documentclass.*?\\begin\{document\}', '', text, flags=re.DOTALL)
+        text = re.sub(r'\\end\{document\}', '', text)
+        text = re.sub(r'\\[a-zA-Z]+\{[^}]*\}', '', text)  # Remove \command{content}
+        text = re.sub(r'\\[a-zA-Z]+', '', text)  # Remove \command
+
+        # Remove figure/table/supplementary references
+        text = re.sub(r'\(?(Supplementary )?(Fig\.|Figure|Table|Supp\.)[^\)]*\)', '', text, flags=re.IGNORECASE)
+        text = re.sub(r'Supplementary (Fig\.|Figure|Table|Note)\s*\d+[a-z]?', '', text, flags=re.IGNORECASE)
+
+        # Remove citation markers like [1, 2, 3] or (1, 2, 3) or superscript numbers
+        text = re.sub(r'\[\d+(\s*,\s*\d+)*\]', '', text)
+        text = re.sub(r'\(\d+(\s*,\s*\d+)*\)', '', text)
+        text = re.sub(r'\d+\s*,\s*\d+(\s*,\s*\d+)*', '', text)  # Lists of numbers
+
+        # Remove common formulas and p-values standalone
+        text = re.sub(r'\b[Pp]\s*[<>=≤≥]\s*[\d\.]+', '', text)
+        text = re.sub(r'\bMAF\s*[=≈]\s*[\d\.]+%?', '', text)
+
+        # Remove multiple spaces and normalize whitespace
+        text = re.sub(r'\s+', ' ', text)
+
+        # Remove very short fragments (likely artifacts)
+        text = ' '.join(word for word in text.split() if len(word) > 1 or word.isalnum())
+
+        return text.strip()
+
     def fetch_multiple_articles(self, pmids: List[str]) -> List[Dict]:
         """
         Fetch details for multiple PubMed IDs

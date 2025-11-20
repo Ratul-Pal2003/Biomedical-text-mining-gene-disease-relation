@@ -258,10 +258,29 @@
         .evidence-text {
             font-style: italic;
             color: #666;
-            max-width: 300px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            max-width: 500px;
+            line-height: 1.5;
+        }
+
+        .evidence-text ul {
+            list-style-type: disc;
+            margin: 4px 0;
+            padding-left: 20px;
+        }
+
+        .evidence-text li {
+            margin: 2px 0;
+            font-style: normal;
+            color: #444;
+        }
+
+        .evidence-text a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .evidence-text a:hover {
+            text-decoration: underline;
         }
 
         .loading {
@@ -361,6 +380,10 @@
                     
                     <div id="pubmed-input" class="tab-content">
                         <input type="text" id="pubmed-id" placeholder="Enter PubMed ID (e.g., 12345678)">
+                        <div style="margin-top: 15px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #555;">Fetched Content:</label>
+                            <textarea id="pubmed-display" readonly placeholder="Fetched abstract/full-text will appear here..." style="background-color: #f8f9fa; cursor: default;"></textarea>
+                        </div>
                     </div>
                     
                     <div id="entity-input" class="tab-content">
@@ -560,11 +583,12 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ pubmed_id: pubmedId })
                     });
-                    
+
                     const pubmedData = await pubmedResponse.json();
                     if (pubmedData.status === 'success') {
                         textToProcess = pubmedData.abstract;
-                        document.getElementById('input-text').value = textToProcess;
+                        // Populate the PubMed display textarea instead of text input
+                        document.getElementById('pubmed-display').value = textToProcess;
                     }
                 }
                 
@@ -610,18 +634,37 @@
             
             data.results.forEach(relation => {
                 const row = document.createElement('tr');
-                const confidenceClass = relation.confidence >= 0.8 ? 'confidence-high' : 
+                const confidenceClass = relation.confidence >= 0.8 ? 'confidence-high' :
                                        relation.confidence >= 0.6 ? 'confidence-medium' : 'confidence-low';
-                
+
+                // Check if this has summary and citations (from entity search)
+                const hasSummary = relation.summary && relation.supporting_papers;
+                const evidenceText = hasSummary ? relation.summary : relation.evidence;
+
+                // Create citations list if available
+                let citationsHTML = '';
+                if (hasSummary && relation.supporting_papers && relation.supporting_papers.length > 0) {
+                    citationsHTML = '<div style="margin-top: 8px; font-size: 0.85em;"><strong>Supporting Papers:</strong><ul style="margin: 4px 0; padding-left: 20px;">';
+                    relation.supporting_papers.forEach(paper => {
+                        const paperUrl = paper.url || `https://pubmed.ncbi.nlm.nih.gov/${paper.pmid}/`;
+                        citationsHTML += `<li><a href="${paperUrl}" target="_blank" style="color: #667eea;">${paper.title || `PMID: ${paper.pmid}`}</a> (${paper.year || 'n.d.'})</li>`;
+                    });
+                    citationsHTML += '</ul></div>';
+                }
+
                 row.innerHTML = `
                     <td><strong>${relation.disease}</strong></td>
                     <td><code>${relation.gene}</code></td>
-                    <td class="evidence-text" title="${relation.evidence}">${relation.evidence}</td>
+                    <td class="evidence-text">
+                        <div title="${evidenceText}">${evidenceText}</div>
+                        ${citationsHTML}
+                    </td>
                     <td>
                         <div class="confidence-bar">
                             <div class="confidence-fill ${confidenceClass}" style="width: ${relation.confidence * 100}%"></div>
                         </div>
                         <small>${Math.round(relation.confidence * 100)}%</small>
+                        ${hasSummary ? `<br><small style="color: #666;">${relation.paper_count} paper(s)</small>` : ''}
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -633,20 +676,23 @@
                 alert('No results to download');
                 return;
             }
-            
+
             try {
-                const response = await fetch(`/export/${format}`);
-                const data = await response.json();
-                
                 if (format === 'json') {
+                    // JSON: fetch as JSON and create blob
+                    const response = await fetch(`/export/${format}`);
+                    const data = await response.json();
                     const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
                     a.download = 'gene_disease_relations.json';
                     a.click();
+                } else if (format === 'csv' || format === 'excel') {
+                    // CSV/Excel: direct download via link
+                    window.location.href = `/export/${format}`;
                 } else {
-                    alert(data.message || 'Export completed');
+                    alert('Unknown export format');
                 }
             } catch (error) {
                 alert('Export failed: ' + error.message);

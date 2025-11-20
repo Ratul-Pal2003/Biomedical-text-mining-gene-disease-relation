@@ -1,0 +1,323 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1600">
+  <defs>
+    <style>
+      .title { font: bold 28px sans-serif; fill: #2c3e50; }
+      .subtitle { font: bold 18px sans-serif; fill: #34495e; }
+      .box-title { font: bold 14px sans-serif; fill: white; }
+      .text { font: 12px sans-serif; fill: #2c3e50; }
+      .small-text { font: 10px sans-serif; fill: #555; }
+      .component { fill: #3498db; stroke: #2980b9; stroke-width: 2; }
+      .storage { fill: #95a5a6; stroke: #7f8c8d; stroke-width: 2; }
+      .external { fill: #e74c3c; stroke: #c0392b; stroke-width: 2; }
+      .model { fill: #9b59b6; stroke: #8e44ad; stroke-width: 2; }
+      .api { fill: #f39c12; stroke: #d68910; stroke-width: 2; }
+      .user { fill: #1abc9c; stroke: #16a085; stroke-width: 2; }
+      .arrow { stroke: #34495e; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .data-arrow { stroke: #27ae60; stroke-width: 2; fill: none; marker-end: url(#arrowhead-green); stroke-dasharray: 5,5; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#34495e" />
+    </marker>
+    <marker id="arrowhead-green" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#27ae60" />
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="700" y="40" text-anchor="middle" class="title">BTM - Biomedical Text Mining Architecture</text>
+  <text x="700" y="65" text-anchor="middle" class="small-text">Gene-Disease Relation Extraction System</text>
+
+  <!-- User Interface Layer -->
+  <text x="50" y="110" class="subtitle">1. User Interface Layer</text>
+  <rect x="50" y="120" width="1300" height="180" rx="10" class="user" opacity="0.1"/>
+
+  <!-- Web Interface -->
+  <rect x="100" y="140" width="250" height="140" rx="5" class="user"/>
+  <text x="225" y="165" text-anchor="middle" class="box-title">Web Interface</text>
+  <text x="110" y="190" class="small-text">📄 templates/index.html</text>
+  <text x="110" y="210" class="text">• Text Input Tab</text>
+  <text x="110" y="227" class="text">• PubMed ID Tab (+ display)</text>
+  <text x="110" y="244" class="text">• Search Entity Tab</text>
+  <text x="110" y="261" class="text">• File Upload Tab</text>
+
+  <!-- Input Methods -->
+  <rect x="400" y="140" width="200" height="60" rx="5" class="component"/>
+  <text x="500" y="160" text-anchor="middle" class="box-title">Input Methods</text>
+  <text x="410" y="180" class="small-text">• Direct Text</text>
+  <text x="410" y="195" class="small-text">• PubMed ID</text>
+
+  <rect x="400" y="210" width="200" height="60" rx="5" class="component"/>
+  <text x="500" y="230" text-anchor="middle" class="box-title">Search Methods</text>
+  <text x="410" y="250" class="small-text">• Entity Search (20 papers)</text>
+  <text x="410" y="265" class="small-text">• File Upload</text>
+
+  <!-- Export Options -->
+  <rect x="650" y="140" width="200" height="130" rx="5" class="component"/>
+  <text x="750" y="160" text-anchor="middle" class="box-title">Export Options</text>
+  <text x="660" y="180" class="small-text">📄 JSON (direct download)</text>
+  <text x="660" y="197" class="small-text">📊 CSV (pandas)</text>
+  <text x="660" y="214" class="small-text">📈 Excel (openpyxl)</text>
+  <text x="660" y="236" class="text">Features:</text>
+  <text x="660" y="253" class="small-text">• Auto column sizing</text>
+  <text x="660" y="268" class="small-text">• Timestamped filenames</text>
+
+  <!-- Display Features -->
+  <rect x="900" y="140" width="220" height="130" rx="5" class="component"/>
+  <text x="1010" y="160" text-anchor="middle" class="box-title">Display Features</text>
+  <text x="910" y="180" class="text">Results:</text>
+  <text x="910" y="197" class="small-text">• Sorted by confidence ↓</text>
+  <text x="910" y="214" class="small-text">• Deduplicated relations</text>
+  <text x="910" y="231" class="small-text">• Abstractive summaries</text>
+  <text x="910" y="248" class="small-text">• Clickable citations</text>
+  <text x="910" y="265" class="small-text">• Paper count badges</text>
+
+  <!-- Arrow from UI to Flask -->
+  <path d="M 700 300 L 700 340" class="arrow"/>
+
+  <!-- Flask Application Layer -->
+  <text x="50" y="365" class="subtitle">2. Flask Application Layer</text>
+  <rect x="50" y="375" width="1300" height="220" rx="10" class="component" opacity="0.1"/>
+
+  <!-- Main Flask App -->
+  <rect x="100" y="395" width="280" height="180" rx="5" class="component"/>
+  <text x="240" y="415" text-anchor="middle" class="box-title">app.py - Main Routes</text>
+  <text x="110" y="440" class="text">Core Endpoints:</text>
+  <text x="110" y="457" class="small-text">• / - Main interface</text>
+  <text x="110" y="474" class="small-text">• /process_text - Extract relations</text>
+  <text x="110" y="491" class="small-text">• /fetch_pubmed - Fetch by PMID</text>
+  <text x="110" y="508" class="small-text">• /search_by_entity - Multi-paper</text>
+  <text x="110" y="525" class="small-text">• /upload - File processing</text>
+  <text x="110" y="542" class="small-text">• /export/&lt;format&gt; - Export data</text>
+  <text x="110" y="559" class="small-text">• /health - Health check</text>
+
+  <!-- Processing Logic -->
+  <rect x="430" y="395" width="240" height="180" rx="5" class="component"/>
+  <text x="550" y="415" text-anchor="middle" class="box-title">Processing Logic</text>
+  <text x="440" y="440" class="text">Text Processing:</text>
+  <text x="440" y="457" class="small-text">• Confidence filtering (0.7 default)</text>
+  <text x="440" y="474" class="small-text">• Deduplication (gene-disease)</text>
+  <text x="440" y="491" class="small-text">• Sorting by confidence ↓</text>
+
+  <text x="440" y="515" class="text">Entity Search:</text>
+  <text x="440" y="532" class="small-text">• Multi-paper aggregation</text>
+  <text x="440" y="549" class="small-text">• Abstractive summarization</text>
+  <text x="440" y="566" class="small-text">• Citation tracking</text>
+
+  <!-- Configuration -->
+  <rect x="720" y="395" width="200" height="180" rx="5" class="storage"/>
+  <text x="820" y="415" text-anchor="middle" class="box-title">Configuration</text>
+  <text x="730" y="440" class="small-text">📄 config.py</text>
+  <text x="730" y="460" class="text">Settings:</text>
+  <text x="730" y="477" class="small-text">• Upload: 16MB max</text>
+  <text x="730" y="494" class="small-text">• Threshold: 0.7 default</text>
+  <text x="730" y="511" class="small-text">• Max text: 10000 chars</text>
+  <text x="730" y="528" class="small-text">• Batch size: 32</text>
+
+  <text x="730" y="548" class="small-text">📄 .env</text>
+  <text x="730" y="565" class="small-text">• SECRET_KEY, PUBMED_EMAIL</text>
+
+  <!-- Helper Functions -->
+  <rect x="970" y="395" width="200" height="180" rx="5" class="component"/>
+  <text x="1070" y="415" text-anchor="middle" class="box-title">Helper Functions</text>
+  <text x="980" y="440" class="text">Summary Generation:</text>
+  <text x="980" y="457" class="small-text">_generate_relation_summary()</text>
+  <text x="980" y="479" class="text">Features:</text>
+  <text x="980" y="496" class="small-text">• Keyword-based typing</text>
+  <text x="980" y="513" class="small-text">• Paper count</text>
+  <text x="980" y="530" class="small-text">• Inline citations</text>
+  <text x="980" y="547" class="small-text">• 5 types: causative, risk,</text>
+  <text x="980" y="564" class="small-text">  associated, protective,</text>
+  <text x="980" y="580" class="small-text">  therapeutic</text>
+
+  <!-- Arrow from Flask to APIs -->
+  <path d="M 240 595 L 240 640" class="arrow"/>
+  <path d="M 550 595 L 550 640" class="arrow"/>
+  <path d="M 850 595 L 850 640" class="arrow"/>
+
+  <!-- External APIs & NER Models Layer -->
+  <text x="50" y="665" class="subtitle">3. Data Processing Layer</text>
+  <rect x="50" y="675" width="1300" height="240" rx="10" class="model" opacity="0.1"/>
+
+  <!-- PubMed API -->
+  <rect x="100" y="695" width="280" height="200" rx="5" class="external"/>
+  <text x="240" y="715" text-anchor="middle" class="box-title">PubMed API Integration</text>
+  <text x="110" y="740" class="small-text">📄 utils/pubmed_api.py</text>
+
+  <text x="110" y="760" class="text">Endpoints:</text>
+  <text x="110" y="777" class="small-text">• search_articles() - esearch</text>
+  <text x="110" y="794" class="small-text">• fetch_article_details() - efetch</text>
+
+  <text x="110" y="814" class="text">Rate Limiting:</text>
+  <text x="110" y="831" class="small-text">• With key: 8.3 req/sec</text>
+  <text x="110" y="848" class="small-text">• Without: 2.5 req/sec</text>
+
+  <text x="110" y="868" class="text">PMC Full-Text:</text>
+  <text x="110" y="885" class="small-text">• fetch_pmc_fulltext() - PMC</text>
+
+  <!-- NER Processing -->
+  <rect x="430" y="695" width="280" height="200" rx="5" class="model"/>
+  <text x="570" y="715" text-anchor="middle" class="box-title">NER Processing</text>
+  <text x="440" y="740" class="small-text">📄 models/ner_processor.py</text>
+
+  <text x="440" y="760" class="text">scispaCy Models:</text>
+  <text x="440" y="777" class="small-text">• en_ner_bc5cdr_md</text>
+  <text x="450" y="792" class="small-text">→ Diseases, Chemicals</text>
+  <text x="440" y="809" class="small-text">• en_ner_bionlp13cg_md</text>
+  <text x="450" y="824" class="small-text">→ Genes, Proteins</text>
+
+  <text x="440" y="844" class="text">Output:</text>
+  <text x="440" y="861" class="small-text">• Entities with confidence</text>
+  <text x="440" y="878" class="small-text">• Sentence context</text>
+
+  <!-- BioBERT Relation Extraction -->
+  <rect x="760" y="695" width="280" height="200" rx="5" class="model"/>
+  <text x="900" y="715" text-anchor="middle" class="box-title">Relation Extraction</text>
+  <text x="770" y="740" class="small-text">📄 models/biobert_relation_extractor.py</text>
+
+  <text x="770" y="760" class="text">Model: dmis-lab/biobert-v1.1</text>
+  <text x="770" y="777" class="small-text">(PubMed/PMC pre-trained)</text>
+
+  <text x="770" y="797" class="text">Relation Types:</text>
+  <text x="770" y="814" class="small-text">• Causative, Risk Factor</text>
+  <text x="770" y="831" class="small-text">• Associated, Protective</text>
+  <text x="770" y="848" class="small-text">• Therapeutic</text>
+
+  <text x="770" y="868" class="text">Confidence Scoring:</text>
+  <text x="770" y="885" class="small-text">• Base + Keyword boost</text>
+
+  <!-- Semantic Extractor -->
+  <rect x="1090" y="695" width="260" height="200" rx="5" class="model"/>
+  <text x="1220" y="715" text-anchor="middle" class="box-title">Semantic Extraction</text>
+  <text x="1100" y="740" class="small-text">📄 models/semantic_relation_</text>
+  <text x="1100" y="755" class="small-text">   extractor.py</text>
+
+  <text x="1100" y="775" class="text">Method:</text>
+  <text x="1100" y="792" class="small-text">• BioBERT embeddings</text>
+  <text x="1100" y="809" class="small-text">• Cosine similarity</text>
+  <text x="1100" y="826" class="small-text">• Context windows</text>
+
+  <text x="1100" y="846" class="text">Use Case:</text>
+  <text x="1100" y="863" class="small-text">• Implicit relationships</text>
+  <text x="1100" y="880" class="small-text">• Computationally expensive</text>
+
+  <!-- Arrow to Data Layer -->
+  <path d="M 240 915 L 240 960" class="data-arrow"/>
+  <path d="M 570 915 L 570 985" class="arrow"/>
+  <path d="M 900 915 L 900 985" class="arrow"/>
+
+  <!-- Data Processing Details -->
+  <text x="50" y="985" class="subtitle">4. Text Processing Pipeline</text>
+  <rect x="50" y="995" width="1300" height="160" rx="10" class="api" opacity="0.1"/>
+
+  <!-- PMC Text Processing -->
+  <rect x="100" y="1015" width="340" height="120" rx="5" class="api"/>
+  <text x="270" y="1035" text-anchor="middle" class="box-title">PMC Full-Text Processing</text>
+  <text x="110" y="1055" class="text">Section Filtering:</text>
+  <text x="110" y="1072" class="small-text">✓ Include: Intro, Results, Discussion</text>
+  <text x="110" y="1089" class="small-text">✗ Exclude: Methods, Supplementary</text>
+
+  <text x="110" y="1109" class="text">Text Cleaning (_clean_text):</text>
+  <text x="110" y="1126" class="small-text">• Remove LaTeX, formulas, citations</text>
+
+  <!-- Entity Extraction Flow -->
+  <rect x="490" y="1015" width="260" height="120" rx="5" class="api"/>
+  <text x="620" y="1035" text-anchor="middle" class="box-title">Entity Extraction</text>
+  <text x="500" y="1055" class="text">Parallel Processing:</text>
+  <text x="500" y="1072" class="small-text">1. BC5CDR model → Diseases</text>
+  <text x="500" y="1089" class="small-text">2. BioNLP13CG → Genes</text>
+  <text x="500" y="1106" class="small-text">3. Merge + deduplicate</text>
+  <text x="500" y="1123" class="small-text">4. Extract sentence context</text>
+
+  <!-- Relation Building -->
+  <rect x="800" y="1015" width="280" height="120" rx="5" class="api"/>
+  <text x="940" y="1035" text-anchor="middle" class="box-title">Relation Building</text>
+  <text x="810" y="1055" class="text">For each sentence:</text>
+  <text x="810" y="1072" class="small-text">1. Find gene-disease pairs</text>
+  <text x="810" y="1089" class="small-text">2. Classify relation type</text>
+  <text x="810" y="1106" class="small-text">3. Calculate confidence</text>
+  <text x="810" y="1123" class="small-text">4. Filter by threshold (0.7)</text>
+
+  <!-- Deduplication -->
+  <rect x="1130" y="1015" width="220" height="120" rx="5" class="api"/>
+  <text x="1240" y="1035" text-anchor="middle" class="box-title">Deduplication</text>
+  <text x="1140" y="1055" class="text">Strategy:</text>
+  <text x="1140" y="1072" class="small-text">• Key: (gene, disease)</text>
+  <text x="1140" y="1089" class="small-text">• Keep highest confidence</text>
+  <text x="1140" y="1106" class="small-text">• Sort descending</text>
+  <text x="1140" y="1123" class="small-text">• Track all papers</text>
+
+  <!-- Arrow to Storage -->
+  <path d="M 700 1155 L 700 1200" class="data-arrow"/>
+
+  <!-- Storage Layer -->
+  <text x="50" y="1225" class="subtitle">5. Data Storage Layer</text>
+  <rect x="50" y="1235" width="1300" height="120" rx="10" class="storage" opacity="0.1"/>
+
+  <!-- Results Storage -->
+  <rect x="100" y="1255" width="300" height="80" rx="5" class="storage"/>
+  <text x="250" y="1275" text-anchor="middle" class="box-title">Results Storage</text>
+  <text x="110" y="1295" class="text">📁 data/results/</text>
+  <text x="110" y="1312" class="small-text">• JSON files with timestamps</text>
+  <text x="110" y="1329" class="small-text">• Full metadata + raw NER data</text>
+
+  <!-- Uploads Storage -->
+  <rect x="450" y="1255" width="300" height="80" rx="5" class="storage"/>
+  <text x="600" y="1275" text-anchor="middle" class="box-title">Upload Storage</text>
+  <text x="460" y="1295" class="text">📁 data/uploads/</text>
+  <text x="460" y="1312" class="small-text">• Timestamped filenames</text>
+  <text x="460" y="1329" class="small-text">• txt, pdf, doc, docx supported</text>
+
+  <!-- Export Cache -->
+  <rect x="800" y="1255" width="300" height="80" rx="5" class="storage"/>
+  <text x="950" y="1275" text-anchor="middle" class="box-title">Export Generation</text>
+  <text x="810" y="1295" class="text">In-memory (BytesIO):</text>
+  <text x="810" y="1312" class="small-text">• CSV generation (pandas)</text>
+  <text x="810" y="1329" class="small-text">• Excel generation (openpyxl)</text>
+
+  <!-- Model Cache -->
+  <rect x="1150" y="1255" width="200" height="80" rx="5" class="storage"/>
+  <text x="1250" y="1275" text-anchor="middle" class="box-title">Model Cache</text>
+  <text x="1160" y="1295" class="text">Lazy Loading:</text>
+  <text x="1160" y="1312" class="small-text">• scispaCy models</text>
+  <text x="1160" y="1329" class="small-text">• BioBERT (HuggingFace)</text>
+
+  <!-- Key Features Box -->
+  <text x="50" y="1390" class="subtitle">6. Key Features</text>
+  <rect x="50" y="1400" width="1300" height="160" rx="10" class="user" opacity="0.1"/>
+
+  <!-- Feature 1 -->
+  <rect x="100" y="1420" width="270" height="120" rx="5" class="component"/>
+  <text x="235" y="1440" text-anchor="middle" class="box-title">Dual Input Strategy</text>
+  <text x="110" y="1460" class="text">PubMed Enhancement:</text>
+  <text x="110" y="1477" class="small-text">1. Check for PMCID</text>
+  <text x="110" y="1494" class="small-text">2. Fetch full-text if available</text>
+  <text x="110" y="1511" class="small-text">3. Fallback to full abstract</text>
+  <text x="110" y="1528" class="small-text">4. Clean + process text</text>
+
+  <!-- Feature 2 -->
+  <rect x="420" y="1420" width="270" height="120" rx="5" class="component"/>
+  <text x="555" y="1440" text-anchor="middle" class="box-title">Multi-Paper Analysis</text>
+  <text x="430" y="1460" class="text">Entity Search (20 papers):</text>
+  <text x="430" y="1477" class="small-text">1. Query PubMed</text>
+  <text x="430" y="1494" class="small-text">2. Process each abstract</text>
+  <text x="430" y="1511" class="small-text">3. Aggregate relations</text>
+  <text x="430" y="1528" class="small-text">4. Generate summary + citations</text>
+
+  <!-- Feature 3 -->
+  <rect x="740" y="1420" width="270" height="120" rx="5" class="component"/>
+  <text x="875" y="1440" text-anchor="middle" class="box-title">Smart Deduplication</text>
+  <text x="750" y="1460" class="text">Case-insensitive matching:</text>
+  <text x="750" y="1477" class="small-text">• (gene, disease) as key</text>
+  <text x="750" y="1494" class="small-text">• Keep highest confidence</text>
+  <text x="750" y="1511" class="small-text">• Track all supporting papers</text>
+  <text x="750" y="1528" class="small-text">• Sort by confidence ↓</text>
+
+  <!-- Feature 4 -->
+  <rect x="1060" y="1420" width="290" height="120" rx="5" class="component"/>
+  <text x="1205" y="1440" text-anchor="middle" class="box-title">Comprehensive Export</text>
+  <text x="1070" y="1460" class="text">Three formats with metadata:</text>
+  <text x="1070" y="1477" class="small-text">• JSON: Full structure</text>
+  <text x="1070" y="1494" class="small-text">• CSV: Tabular data</text>
+  <text x="1070" y="1511" class="small-text">• Excel: Auto-sized columns</text>
+  <text x="1070" y="1528" class="small-text">• Timestamped filenames</text>
+</svg>
