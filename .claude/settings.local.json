@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cmd /c \"mkdir C:\\Users\\rishi\\BTM_Project\\Biomedical-text-mining-gene-disease-relation\\static\\js 2>nul || echo Directory exists\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

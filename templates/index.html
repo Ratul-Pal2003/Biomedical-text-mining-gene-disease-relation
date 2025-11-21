@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BTM - Gene-Disease Relation Extraction</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -341,11 +342,55 @@
             margin-top: 8px;
         }
 
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .view-btn {
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            background: transparent;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .view-btn.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .view-btn:hover:not(.active) {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        #graph-container {
+            position: relative;
+            width: 100%;
+            min-height: 500px;
+            background: #fafafa;
+            border-radius: 10px;
+        }
+
+        .view-content {
+            display: none;
+        }
+
+        .view-content.active {
+            display: block;
+        }
+
         @media (max-width: 768px) {
             .main-content {
                 grid-template-columns: 1fr;
             }
-            
+
             .stats-grid {
                 grid-template-columns: 1fr;
             }
@@ -436,7 +481,12 @@
                     </div>
                 </div>
 
-                <div id="table-view">
+                <div class="view-toggle">
+                    <button class="view-btn active" onclick="switchView('table')">Table View</button>
+                    <button class="view-btn" onclick="switchView('graph')">Graph View</button>
+                </div>
+
+                <div id="table-view" class="view-content active">
                     <table class="results-table">
                         <thead>
                             <tr>
@@ -456,6 +506,10 @@
                     </table>
                 </div>
 
+                <div id="graph-view" class="view-content">
+                    <div id="graph-container"></div>
+                </div>
+
                 <div class="download-buttons">
                     <button class="download-btn" onclick="downloadResults('json')">📄 JSON</button>
                     <button class="download-btn" onclick="downloadResults('csv')">📊 CSV</button>
@@ -465,9 +519,49 @@
         </div>
     </div>
 
+    <script src="/static/js/graph-viz.js"></script>
     <script>
         let currentResults = [];
         let currentTab = 'text';
+        let currentView = 'table';
+        let graphVisualizer = null;
+
+        function switchView(viewName) {
+            currentView = viewName;
+
+            // Update button states
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Update view visibility
+            document.querySelectorAll('.view-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            if (viewName === 'table') {
+                document.getElementById('table-view').classList.add('active');
+            } else if (viewName === 'graph') {
+                document.getElementById('graph-view').classList.add('active');
+                renderGraph();
+            }
+        }
+
+        function renderGraph() {
+            if (!currentResults || currentResults.length === 0) {
+                document.getElementById('graph-container').innerHTML =
+                    '<div style="text-align:center; padding:50px; color:#666;">No data to visualize. Please process some text first.</div>';
+                return;
+            }
+
+            // Initialize or update graph visualizer
+            if (!graphVisualizer) {
+                graphVisualizer = new GraphVisualizer('graph-container', 900, 500);
+            }
+
+            graphVisualizer.render(currentResults);
+        }
 
         function switchTab(tabName) {
             currentTab = tabName;
@@ -669,6 +763,11 @@
                 `;
                 tbody.appendChild(row);
             });
+
+            // Auto-render graph if in graph view
+            if (currentView === 'graph') {
+                renderGraph();
+            }
         }
 
         async function downloadResults(format) {

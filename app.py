@@ -616,6 +616,70 @@ def export_results(format_type):
         logger.error(f"Export error: {str(e)}")
         return jsonify({'error': 'Export failed'}), 500
 
+@app.route('/graph_data', methods=['POST'])
+def get_graph_data():
+    """Format results data for graph visualization"""
+    try:
+        data = request.get_json()
+        relations = data.get('relations', [])
+
+        if not relations:
+            return jsonify({'error': 'No relations provided'}), 400
+
+        # Extract unique genes and diseases
+        genes = set()
+        diseases = set()
+
+        for rel in relations:
+            genes.add(rel['gene'])
+            diseases.add(rel['disease'])
+
+        # Format nodes
+        nodes = []
+        for disease in diseases:
+            nodes.append({
+                'id': disease,
+                'type': 'disease',
+                'label': disease,
+                'group': 'disease'
+            })
+
+        for gene in genes:
+            nodes.append({
+                'id': gene,
+                'type': 'gene',
+                'label': gene,
+                'group': 'gene'
+            })
+
+        # Format links
+        links = []
+        for rel in relations:
+            links.append({
+                'source': rel['disease'],
+                'target': rel['gene'],
+                'confidence': rel['confidence'],
+                'evidence': rel.get('evidence', rel.get('summary', '')),
+                'relation_type': rel.get('relation_type', 'related'),
+                'value': rel['confidence'] * 10
+            })
+
+        return jsonify({
+            'status': 'success',
+            'nodes': nodes,
+            'links': links,
+            'stats': {
+                'total_nodes': len(nodes),
+                'total_genes': len(genes),
+                'total_diseases': len(diseases),
+                'total_relations': len(links)
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"Graph data error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/test_ner')
 def test_ner_endpoint():
     """Test endpoint to verify NER is working"""
@@ -674,6 +738,7 @@ def health_check():
             '/search_pubmed',
             '/search_by_entity',
             '/export/<format>',
+            '/graph_data',
             '/test_ner',
             '/test_pubmed',
             '/debug_abstract/<pmid>',

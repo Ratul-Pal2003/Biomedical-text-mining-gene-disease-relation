@@ -6,6 +6,8 @@ __pycache__/
 .Python
 env/
 venv/
+btmvenv/
+Graph/
 ENV/
 env.bak/
 venv.bak/
