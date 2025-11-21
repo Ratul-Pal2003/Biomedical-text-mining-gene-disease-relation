@@ -54,9 +54,9 @@ class GraphVisualizer {
         const legendData = [
             { label: 'Disease', color: '#ff6b6b', shape: 'rect' },
             { label: 'Gene', color: '#4ecdc4', shape: 'circle' },
-            { label: 'High Confidence', color: '#51cf66', lineStyle: 'solid' },
-            { label: 'Medium Confidence', color: '#ffa94d', lineStyle: 'dashed' },
-            { label: 'Low Confidence', color: '#ff6b6b', lineStyle: 'dotted' }
+            { label: 'High (≥0.9)', color: '#51cf66', lineStyle: 'solid' },
+            { label: 'Medium (0.8-0.9)', color: '#ffa94d', lineStyle: 'dashed' },
+            { label: 'Low (<0.8)', color: '#ff6b6b', lineStyle: 'dotted' }
         ];
 
         legendData.forEach((item, i) => {
@@ -182,6 +182,7 @@ class GraphVisualizer {
         // Add arrow markers for directed edges
         const defs = this.svg.append('defs');
 
+        // Arrow markers for confidence levels: High (≥0.9), Medium (0.8-0.9), Low (<0.8)
         ['high', 'medium', 'low'].forEach(level => {
             const color = level === 'high' ? '#51cf66' :
                          level === 'medium' ? '#ffa94d' : '#ff6b6b';
@@ -207,19 +208,19 @@ class GraphVisualizer {
             .append('line')
             .attr('class', 'link')
             .attr('stroke', d => {
-                if (d.confidence >= 0.8) return '#51cf66';
-                if (d.confidence >= 0.6) return '#ffa94d';
-                return '#ff6b6b';
+                if (d.confidence >= 0.9) return '#51cf66';  // High: green
+                if (d.confidence >= 0.8) return '#ffa94d';  // Medium: yellow
+                return '#ff6b6b';  // Low: red
             })
             .attr('stroke-width', d => Math.sqrt(d.value))
             .attr('stroke-dasharray', d => {
-                if (d.confidence >= 0.8) return 'none';
-                if (d.confidence >= 0.6) return '5,5';
-                return '2,2';
+                if (d.confidence >= 0.9) return 'none';     // High: solid
+                if (d.confidence >= 0.8) return '5,5';      // Medium: dashed
+                return '2,2';  // Low: dotted
             })
             .attr('marker-end', d => {
-                if (d.confidence >= 0.8) return 'url(#arrow-high)';
-                if (d.confidence >= 0.6) return 'url(#arrow-medium)';
+                if (d.confidence >= 0.9) return 'url(#arrow-high)';
+                if (d.confidence >= 0.8) return 'url(#arrow-medium)';
                 return 'url(#arrow-low)';
             })
             .attr('opacity', 0.6);

@@ -147,20 +147,6 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        .file-upload {
-            border: 2px dashed #667eea;
-            border-radius: 10px;
-            padding: 30px;
-            text-align: center;
-            background: #f8f9fc;
-            transition: all 0.3s ease;
-        }
-
-        .file-upload:hover {
-            background: #f0f4ff;
-            border-color: #5a6fd8;
-        }
-
         .process-btn {
             width: 100%;
             padding: 15px 30px;
@@ -416,7 +402,6 @@
                         <button class="tab active" onclick="switchTab('text')">Text Input</button>
                         <button class="tab" onclick="switchTab('pubmed')">PubMed ID</button>
                         <button class="tab" onclick="switchTab('entity')">Search Entity</button>
-                        <button class="tab" onclick="switchTab('file')">File Upload</button>
                     </div>
                     
                     <div id="text-input" class="tab-content active">
@@ -434,14 +419,6 @@
                     <div id="entity-input" class="tab-content">
                         <input type="text" id="entity-name" placeholder="Enter gene (e.g., BRCA1) or disease (e.g., Breast Cancer)">
                         <p class="entity-search-hint">Enter a gene or disease name to find all related entities from multiple research papers</p>
-                    </div>
-                    
-                    <div id="file-input" class="tab-content">
-                        <div class="file-upload">
-                            <p>📄 Drag and drop files here</p>
-                            <p style="margin: 10px 0;">or</p>
-                            <input type="file" id="file-upload" accept=".txt,.pdf,.doc,.docx" multiple>
-                        </div>
                     </div>
                 </div>
 

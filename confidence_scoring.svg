@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#1a365d"/>
+      <stop offset="100%" style="stop-color:#2c5282"/>
+    </linearGradient>
+    <linearGradient id="nerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#48bb78"/>
+      <stop offset="100%" style="stop-color:#38a169"/>
+    </linearGradient>
+    <linearGradient id="relationGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4299e1"/>
+      <stop offset="100%" style="stop-color:#3182ce"/>
+    </linearGradient>
+    <linearGradient id="boostGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ed8936"/>
+      <stop offset="100%" style="stop-color:#dd6b20"/>
+    </linearGradient>
+    <linearGradient id="finalGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#9f7aea"/>
+      <stop offset="100%" style="stop-color:#805ad5"/>
+    </linearGradient>
+
+    <!-- Drop shadow -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="3" stdDeviation="3" flood-opacity="0.2"/>
+    </filter>
+
+    <!-- Arrow marker -->
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#4a5568"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="900" fill="#f7fafc"/>
+
+  <!-- Title -->
+  <rect x="0" y="0" width="1200" height="70" fill="url(#headerGrad)"/>
+  <text x="600" y="45" text-anchor="middle" fill="white" font-size="28" font-weight="bold">Confidence Scoring System</text>
+
+  <!-- ==================== STAGE 1: NER CONFIDENCE ==================== -->
+  <g transform="translate(50, 100)">
+    <!-- Stage 1 Box -->
+    <rect x="0" y="0" width="350" height="280" rx="12" fill="white" stroke="#48bb78" stroke-width="3" filter="url(#shadow)"/>
+    <rect x="0" y="0" width="350" height="45" rx="12" fill="url(#nerGrad)"/>
+    <rect x="0" y="30" width="350" height="15" fill="url(#nerGrad)"/>
+    <text x="175" y="30" text-anchor="middle" fill="white" font-size="18" font-weight="bold">Stage 1: Entity Confidence</text>
+
+    <!-- NER Model scores -->
+    <text x="20" y="75" fill="#2d3748" font-size="14" font-weight="600">Model-Based Scores:</text>
+
+    <!-- BC5CDR -->
+    <rect x="20" y="90" width="150" height="50" rx="6" fill="#e6fffa" stroke="#38b2ac" stroke-width="1.5"/>
+    <text x="95" y="112" text-anchor="middle" fill="#234e52" font-size="12" font-weight="600">BC5CDR Model</text>
+    <text x="95" y="130" text-anchor="middle" fill="#319795" font-size="16" font-weight="bold">0.85</text>
+
+    <!-- BioNLP -->
+    <rect x="180" y="90" width="150" height="50" rx="6" fill="#ebf8ff" stroke="#4299e1" stroke-width="1.5"/>
+    <text x="255" y="112" text-anchor="middle" fill="#2a4365" font-size="12" font-weight="600">BioNLP Model</text>
+    <text x="255" y="130" text-anchor="middle" fill="#3182ce" font-size="16" font-weight="bold">0.80</text>
+
+    <!-- Pattern Match -->
+    <rect x="20" y="150" width="150" height="50" rx="6" fill="#faf5ff" stroke="#9f7aea" stroke-width="1.5"/>
+    <text x="95" y="172" text-anchor="middle" fill="#44337a" font-size="12" font-weight="600">Pattern Match</text>
+    <text x="95" y="190" text-anchor="middle" fill="#805ad5" font-size="16" font-weight="bold">0.95</text>
+
+    <!-- Entity types -->
+    <text x="20" y="225" fill="#4a5568" font-size="11">Diseases/Chemicals (BC5CDR)</text>
+    <text x="20" y="242" fill="#4a5568" font-size="11">Genes/Proteins (BioNLP)</text>
+    <text x="20" y="259" fill="#4a5568" font-size="11">COVID-19, SARS-CoV-2 (Pattern)</text>
+  </g>
+
+  <!-- Arrow 1 to 2 -->
+  <line x1="420" y1="240" x2="480" y2="240" stroke="#4a5568" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- ==================== STAGE 2: BASE CONFIDENCE ==================== -->
+  <g transform="translate(500, 100)">
+    <rect x="0" y="0" width="280" height="280" rx="12" fill="white" stroke="#4299e1" stroke-width="3" filter="url(#shadow)"/>
+    <rect x="0" y="0" width="280" height="45" rx="12" fill="url(#relationGrad)"/>
+    <rect x="0" y="30" width="280" height="15" fill="url(#relationGrad)"/>
+    <text x="140" y="30" text-anchor="middle" fill="white" font-size="18" font-weight="bold">Stage 2: Base Score</text>
+
+    <!-- Formula -->
+    <text x="140" y="75" text-anchor="middle" fill="#2d3748" font-size="14" font-weight="600">Relation Base Confidence</text>
+
+    <rect x="20" y="90" width="240" height="60" rx="8" fill="#ebf8ff" stroke="#4299e1" stroke-width="2"/>
+    <text x="140" y="118" text-anchor="middle" fill="#2a4365" font-size="13" font-weight="600">base = min(gene_conf, disease_conf)</text>
+    <text x="140" y="138" text-anchor="middle" fill="#718096" font-size="11">Takes the lower of the two entity scores</text>
+
+    <!-- Example -->
+    <text x="20" y="175" fill="#4a5568" font-size="12" font-weight="600">Example:</text>
+    <text x="20" y="195" fill="#4a5568" font-size="11">Gene "ACE2" confidence: 0.80</text>
+    <text x="20" y="212" fill="#4a5568" font-size="11">Disease "COVID-19" confidence: 0.95</text>
+
+    <rect x="20" y="225" width="240" height="35" rx="6" fill="#c6f6d5" stroke="#48bb78" stroke-width="1.5"/>
+    <text x="140" y="248" text-anchor="middle" fill="#22543d" font-size="14" font-weight="bold">Base Score = 0.80</text>
+  </g>
+
+  <!-- Arrow 2 to 3 -->
+  <line x1="800" y1="240" x2="860" y2="240" stroke="#4a5568" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- ==================== STAGE 3: CONFIDENCE BOOSTS ==================== -->
+  <g transform="translate(880, 90)">
+    <rect x="0" y="0" width="280" height="380" rx="12" fill="white" stroke="#ed8936" stroke-width="3" filter="url(#shadow)"/>
+    <rect x="0" y="0" width="280" height="45" rx="12" fill="url(#boostGrad)"/>
+    <rect x="0" y="30" width="280" height="15" fill="url(#boostGrad)"/>
+    <text x="140" y="30" text-anchor="middle" fill="white" font-size="18" font-weight="bold">Stage 3: Boost Factors</text>
+
+    <!-- Boost 1: Strong Keywords -->
+    <rect x="15" y="55" width="250" height="70" rx="6" fill="#fffaf0" stroke="#ed8936" stroke-width="1"/>
+    <text x="25" y="75" fill="#c05621" font-size="12" font-weight="bold">1. Strong Relation Keywords</text>
+    <text x="225" y="75" fill="#dd6b20" font-size="14" font-weight="bold">+0.05</text>
+    <text x="25" y="93" fill="#744210" font-size="10">"cause", "mutation", "variant",</text>
+    <text x="25" y="107" fill="#744210" font-size="10">"responsible", "pathogenic"</text>
+
+    <!-- Boost 2: Sentence Length -->
+    <rect x="15" y="132" width="250" height="55" rx="6" fill="#fffaf0" stroke="#ed8936" stroke-width="1"/>
+    <text x="25" y="152" fill="#c05621" font-size="12" font-weight="bold">2. Short Sentence (&lt;20 words)</text>
+    <text x="225" y="152" fill="#dd6b20" font-size="14" font-weight="bold">+0.03</text>
+    <text x="25" y="172" fill="#744210" font-size="10">Shorter sentences = clearer relations</text>
+
+    <!-- Boost 3: Evidence Markers -->
+    <rect x="15" y="194" width="250" height="70" rx="6" fill="#fffaf0" stroke="#ed8936" stroke-width="1"/>
+    <text x="25" y="214" fill="#c05621" font-size="12" font-weight="bold">3. Evidence Markers</text>
+    <text x="200" y="214" fill="#dd6b20" font-size="14" font-weight="bold">+0.02 each</text>
+    <text x="25" y="232" fill="#744210" font-size="10">"study", "show", "demonstrate",</text>
+    <text x="25" y="246" fill="#744210" font-size="10">"find", "observe" (max +0.05)</text>
+
+    <!-- Boost 4: Proximity -->
+    <rect x="15" y="271" width="250" height="55" rx="6" fill="#fffaf0" stroke="#ed8936" stroke-width="1"/>
+    <text x="25" y="291" fill="#c05621" font-size="12" font-weight="bold">4. Entity Proximity (&lt;50 chars)</text>
+    <text x="225" y="291" fill="#dd6b20" font-size="14" font-weight="bold">+0.05</text>
+    <text x="25" y="311" fill="#744210" font-size="10">Gene and disease mentioned close together</text>
+
+    <!-- Max boost -->
+    <rect x="15" y="335" width="250" height="35" rx="6" fill="#feebc8" stroke="#dd6b20" stroke-width="2"/>
+    <text x="140" y="358" text-anchor="middle" fill="#7b341e" font-size="13" font-weight="bold">Max Total Boost: ~0.18</text>
+  </g>
+
+  <!-- ==================== STAGE 4: FINAL CALCULATION ==================== -->
+  <g transform="translate(300, 500)">
+    <rect x="0" y="0" width="600" height="200" rx="12" fill="white" stroke="#9f7aea" stroke-width="3" filter="url(#shadow)"/>
+    <rect x="0" y="0" width="600" height="45" rx="12" fill="url(#finalGrad)"/>
+    <rect x="0" y="30" width="600" height="15" fill="url(#finalGrad)"/>
+    <text x="300" y="30" text-anchor="middle" fill="white" font-size="18" font-weight="bold">Stage 4: Final Confidence Calculation</text>
+
+    <!-- Formula box -->
+    <rect x="30" y="60" width="540" height="50" rx="8" fill="#faf5ff" stroke="#9f7aea" stroke-width="2"/>
+    <text x="300" y="90" text-anchor="middle" fill="#44337a" font-size="16" font-weight="bold">final_confidence = min(0.98, base + total_boost)</text>
+
+    <!-- Example calculation -->
+    <text x="30" y="135" fill="#4a5568" font-size="13" font-weight="600">Example Calculation:</text>
+
+    <rect x="30" y="145" width="250" height="40" rx="6" fill="#e9d8fd"/>
+    <text x="155" y="170" text-anchor="middle" fill="#553c9a" font-size="12">Base: 0.80 + Boosts: 0.13</text>
+
+    <text x="295" y="170" fill="#4a5568" font-size="20" font-weight="bold">=</text>
+
+    <rect x="320" y="145" width="250" height="40" rx="6" fill="#c6f6d5" stroke="#48bb78" stroke-width="2"/>
+    <text x="445" y="170" text-anchor="middle" fill="#22543d" font-size="16" font-weight="bold">Final: 0.93</text>
+  </g>
+
+  <!-- Arrow down to Stage 4 -->
+  <path d="M 1020 480 Q 1020 550 920 550 L 920 500" stroke="#4a5568" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+  <path d="M 640 390 L 640 480" stroke="#4a5568" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+
+  <!-- ==================== CONFIDENCE SCALE ==================== -->
+  <g transform="translate(50, 740)">
+    <text x="0" y="0" fill="#2d3748" font-size="16" font-weight="bold">Confidence Scale Interpretation:</text>
+
+    <!-- Scale bar - 3 zones: Red (0-0.8), Yellow (0.8-0.9), Green (0.9+) -->
+    <rect x="0" y="20" width="533" height="25" rx="4" fill="#fc8181"/>
+    <rect x="533" y="20" width="134" height="25" fill="#f6e05e"/>
+    <rect x="667" y="20" width="333" height="25" rx="4" fill="#48bb78"/>
+
+    <!-- Scale labels -->
+    <text x="266" y="38" text-anchor="middle" fill="#742a2a" font-size="13" font-weight="bold">Low Confidence (0.0 - 0.8)</text>
+    <text x="600" y="38" text-anchor="middle" fill="#744210" font-size="13" font-weight="bold">Medium (0.8 - 0.9)</text>
+    <text x="833" y="38" text-anchor="middle" fill="#22543d" font-size="13" font-weight="bold">High Confidence (0.9+)</text>
+
+    <!-- Scale markers -->
+    <line x1="0" y1="50" x2="0" y2="58" stroke="#4a5568" stroke-width="1"/>
+    <text x="0" y="70" fill="#4a5568" font-size="10">0.0</text>
+
+    <line x1="533" y1="50" x2="533" y2="58" stroke="#4a5568" stroke-width="2"/>
+    <text x="533" y="70" fill="#4a5568" font-size="10" font-weight="bold">0.8</text>
+
+    <line x1="667" y1="50" x2="667" y2="58" stroke="#4a5568" stroke-width="2"/>
+    <text x="667" y="70" fill="#4a5568" font-size="10" font-weight="bold">0.9</text>
+
+    <line x1="1000" y1="50" x2="1000" y2="58" stroke="#4a5568" stroke-width="1"/>
+    <text x="985" y="70" fill="#4a5568" font-size="10">0.98</text>
+  </g>
+
+  <!-- ==================== LEGEND ==================== -->
+  <g transform="translate(50, 830)">
+    <rect x="0" y="0" width="1100" height="50" rx="8" fill="#edf2f7" stroke="#cbd5e0"/>
+    <text x="20" y="30" fill="#2d3748" font-size="12" font-weight="bold">Key:</text>
+
+    <rect x="70" y="15" width="20" height="20" rx="3" fill="#48bb78"/>
+    <text x="100" y="30" fill="#4a5568" font-size="11">NER Model Confidence</text>
+
+    <rect x="250" y="15" width="20" height="20" rx="3" fill="#4299e1"/>
+    <text x="280" y="30" fill="#4a5568" font-size="11">Base Calculation</text>
+
+    <rect x="420" y="15" width="20" height="20" rx="3" fill="#ed8936"/>
+    <text x="450" y="30" fill="#4a5568" font-size="11">Boost Factors</text>
+
+    <rect x="570" y="15" width="20" height="20" rx="3" fill="#9f7aea"/>
+    <text x="600" y="30" fill="#4a5568" font-size="11">Final Score</text>
+
+    <text x="750" y="30" fill="#718096" font-size="11" font-style="italic">All scores capped at 0.98 to indicate uncertainty</text>
+  </g>
+</svg>
